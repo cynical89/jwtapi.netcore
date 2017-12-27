@@ -14,6 +14,7 @@ using JwtApi.netcore.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using AspNetCoreRateLimit;
 
 namespace JwtApi.netcore
 {
@@ -29,6 +30,15 @@ namespace JwtApi.netcore
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            services.AddOptions();
+            services.AddMemoryCache();
+
+            //configure ip rate limiting middle-ware
+            services.Configure<IpRateLimitOptions>(Configuration.GetSection("IpRateLimiting"));
+            services.Configure<IpRateLimitPolicies>(Configuration.GetSection("IpRateLimitPolicies"));
+            services.AddSingleton<IIpPolicyStore, MemoryCacheIpPolicyStore>();
+            services.AddSingleton<IRateLimitCounterStore, MemoryCacheRateLimitCounterStore>();
+
             services.AddDbContext<AppDbContext>(options =>
                 options.UseSqlServer(Configuration.GetConnectionString("DefaultConnection")));
 
@@ -82,6 +92,8 @@ namespace JwtApi.netcore
             {
                 app.UseExceptionHandler("/Home/Error");
             }
+
+            app.UseIpRateLimiting();
 
             app.UseStaticFiles();
 
