@@ -54,7 +54,6 @@ namespace JwtApi.netcore
                 .AddDefaultTokenProviders();
 
             services.AddAuthentication()
-                .AddCookie(cfg => cfg.SlidingExpiration = true)
                 .AddJwtBearer(cfg =>
                 {
                     cfg.RequireHttpsMetadata = false;
