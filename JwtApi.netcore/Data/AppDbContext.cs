@@ -34,6 +34,7 @@ namespace JwtApi.netcore.Data
             else
             {
                 var environmentName = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
+                var database = Environment.GetEnvironmentVariable("ASPNETCORE_DATABASE");
 
                 var configuration = new ConfigurationBuilder()
                     .SetBasePath(AppContext.BaseDirectory)
@@ -43,15 +44,35 @@ namespace JwtApi.netcore.Data
 
                 var config = configuration.Build();
 
-                var connstr = config.GetConnectionString("DefaultConnection");
+                string connstr;
 
-                if (string.IsNullOrWhiteSpace(connstr) == true)
+                switch (database)
+                {
+                    case "NPGSQL":
+                        connstr = config.GetConnectionString("NpgSqlConnection");
+                        if (!string.IsNullOrEmpty(connstr))
+                            options.UseNpgsql(connstr);
+                        break;
+                    case "MYSQL":
+                        connstr = config.GetConnectionString("MySqlConnection");
+                        if (!string.IsNullOrEmpty(connstr))
+                            options.UseMySql(connstr);
+                        break;
+                    case "MSSQL":
+                        connstr = config.GetConnectionString("DefaultConnection");
+                        if (!string.IsNullOrEmpty(connstr))
+                            options.UseSqlServer(connstr);
+                        break;
+                    default:
+                        connstr = null;
+                        break;
+                }
+
+                if (string.IsNullOrWhiteSpace(connstr))
                 {
                     throw new InvalidOperationException(
                         "Could not find a connection string.");
                 }
-
-                options.UseSqlServer(connstr);
 
                 base.OnConfiguring(options);
             }

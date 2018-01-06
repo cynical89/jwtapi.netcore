@@ -39,8 +39,7 @@ namespace JwtApi.netcore
             services.AddSingleton<IIpPolicyStore, MemoryCacheIpPolicyStore>();
             services.AddSingleton<IRateLimitCounterStore, MemoryCacheRateLimitCounterStore>();
 
-            services.AddDbContext<AppDbContext>(options =>
-                options.UseSqlServer(Configuration.GetConnectionString("DefaultConnection")));
+            HandleDatabaseChoices(services, Configuration);
 
             services.AddIdentity<ApplicationUser, IdentityRole>(o =>
             {
@@ -110,6 +109,57 @@ namespace JwtApi.netcore
                     name: "spa-fallback",
                     defaults: new { controller = "Home", action = "Index" });
             });
+        }
+
+        private static void HandleDatabaseChoices(IServiceCollection services, IConfiguration configuration)
+        {
+            var database = Environment.GetEnvironmentVariable("ASPNETCORE_DATABASE");
+
+            if (string.IsNullOrEmpty(database))
+            {
+                /**
+                 * This is where we configure the database without args. If we didn't add an argument for
+                 * the database, and we haven't set the evironment variable, You can choose here what
+                 * The server will use. Sql Server is the default. You will also want to let it set the
+                 * environment variable for the appropriate database for configuring the context
+                */
+
+                // SQL Server -- Comment out these lines if you'd like to not use SQL Server
+
+                services.AddEntityFrameworkSqlServer().AddDbContext<AppDbContext>(options =>
+                    options.UseSqlServer(configuration.GetConnectionString("DefaultConnection")));
+                Environment.SetEnvironmentVariable("ASPNETCORE_DATABASE", "MSSQL");
+
+                // MySQL -- Uncomment to use Entity Framework with MySql
+
+                //services.AddEntityFrameworkMySql().AddDbContext<AppDbContext>(options =>
+                //    options.UseMySql(configuration.GetConnectionString("MySqlConnection")));
+                //Environment.SetEnvironmentVariable("ASPNETCORE_DATABASE", "MYSQL");
+
+                //PostgreSQL -- Uncomment to use Entity Framework with PostgreSQL
+
+                //services.AddEntityFrameworkNpgsql().AddEntityFrameworkMySql().AddDbContext<AppDbContext>(options =>
+                //    options.UseNpgsql(configuration.GetConnectionString("MySqlConnection")));
+                //Environment.SetEnvironmentVariable("ASPNETCORE_DATABASE", "NPGSQL");
+
+                return;
+            }
+
+            switch (database)
+            {
+                case "MSSQL":
+                    services.AddEntityFrameworkSqlServer().AddDbContext<AppDbContext>(options =>
+                        options.UseSqlServer(configuration.GetConnectionString("DefaultConnection")));
+                    break;
+                case "MYSQL":
+                    services.AddEntityFrameworkMySql().AddDbContext<AppDbContext>(options =>
+                        options.UseMySql(configuration.GetConnectionString("MySqlConnection")));
+                    break;
+                case "NPGSQL":
+                    services.AddEntityFrameworkNpgsql().AddEntityFrameworkMySql().AddDbContext<AppDbContext>(options =>
+                        options.UseNpgsql(configuration.GetConnectionString("MySqlConnection")));
+                    break;
+            }
         }
     }
 }
