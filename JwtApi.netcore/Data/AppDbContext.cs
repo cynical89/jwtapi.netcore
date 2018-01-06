@@ -27,7 +27,7 @@ namespace JwtApi.netcore.Data
 
         protected override void OnConfiguring(DbContextOptionsBuilder options)
         {
-            if (options != null)
+            if (options.IsConfigured == true)
             {
                 base.OnConfiguring(options);
             }
@@ -45,7 +45,7 @@ namespace JwtApi.netcore.Data
 
                 var connstr = config.GetConnectionString("DefaultConnection");
 
-                if (String.IsNullOrWhiteSpace(connstr) == true)
+                if (string.IsNullOrWhiteSpace(connstr) == true)
                 {
                     throw new InvalidOperationException(
                         "Could not find a connection string.");
